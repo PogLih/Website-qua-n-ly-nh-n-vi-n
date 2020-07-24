@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	   		http://www.springframework.org/schema/beans/spring-beans.xsd
+	   		http://www.springframework.org/schema/context
+	   		http://www.springframework.org/schema/context/spring-context.xsd
+	   		http://www.springframework.org/schema/tx 
+			http://www.springframework.org/schema/tx/spring-tx.xsd
+			http://www.springframework.org/schema/mvc 
+			http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+	<!-- Spring MVC Annotation -->
+	<context:annotation-config />
+	<mvc:annotation-driven />
+
+
+	<!-- Cấu hình view -->
+	<bean id="viewResolver"
+		p:prefix="/WEB-INF/views/layout/layout-dispacher.jsp?view="
+		p:suffix=".jsp"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver" />
+
+	<!-- Cấu hình package chứa các controller -->
+	<context:component-scan
+		base-package="poly.controller" />
+
+	<!-- Kết nối CSDL -->
+	<bean id="dataSource"
+		class="org.springframework.jdbc.datasource.DriverManagerDataSource"
+		p:driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+		p:url="jdbc:sqlserver://localhost:1433; Database=JAVA5_Personel"
+		p:username="sa" p:password="123">
+	</bean>
+
+	<!-- Cấu hình Hibernate -->
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">org.hibernate.dialect.SQLServerDialect</prop>
+				<prop key="hibernate.show_sql">true</prop>
+			</props>
+		</property>
+		<property name="packagesToScan" value="poly.entity" />
+	</bean>
+
+	<!-- Transaction Manager -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager"
+		p:sessionFactory-ref="sessionFactory" />
+	<tx:annotation-driven
+		transaction-manager="transactionManager" />
+
+	<!-- Khai báo DAO Class -->
+	<bean id="userDAO" class="poly.dao.UserDAO">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<bean id="staffDAO" class="poly.dao.StaffDAO">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<bean id="departDAO" class="poly.dao.DepartDAO">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<bean id="recordDAO" class="poly.dao.RecordDAO">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- maxUploadSize=20MB -->
+		<property name="maxUploadSize" value="20971520" />
+	</bean>
+
+	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/admin/**" />
+			<mvc:exclude-mapping path="/home/**" />
+			<bean class="poly.intercepsor.LoggerIntercepsor" />
+		</mvc:interceptor>
+	</mvc:interceptors>
+
+	<bean id="localeResolver"
+		class="org.springframework.web.servlet.i18n.CookieLocaleResolver">
+		<property name="defaultLocale" value="vi" />
+		<property name="cookieMaxAge" value="43200" />
+	</bean>
+
+	<mvc:interceptors>
+		<bean id="localeChangeInterceptor"
+			class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+			<property name="paramName" value="language" />
+		</bean>
+	</mvc:interceptors>
+
+	<!-- Bundle Resources -->
+	<bean id="messageSource"
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="defaultEncoding" value="UTF-8" />
+		<property name="basenames">
+			<list>
+				<value>classpath:global</value>
+				<value>classpath:staff</value>
+				<value>classpath:user</value>
+				<value>classpath:depart</value>
+				<value>classpath:record</value>
+			</list>
+		</property>
+	</bean>
+</beans>
